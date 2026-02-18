@@ -12,23 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Test factories for Products
+"""
+
 # pylint: disable=too-few-public-methods
 
-"""
-Test Factory to make fake objects for testing
-"""
 import factory
 from factory.fuzzy import FuzzyChoice, FuzzyDecimal
-from service.models import Product, Category
+
+from service.models import Category, Product
 
 
 class ProductFactory(factory.Factory):
-    """Creates fake products for testing"""
+    """Factory class for creating fake Product objects for tests."""
 
     class Meta:
-        """Maps factory to data model"""
-
+        """Factory metadata."""
         model = Product
 
     id = factory.Sequence(lambda n: n)
-   ## Add code to create Fake Products 
+    name = factory.Faker("word")
+    description = factory.Faker("sentence")
+    price = FuzzyDecimal(1.00, 1000.00, 2)
+    available = FuzzyChoice([True, False])
+    category = FuzzyChoice(list(Category))
