@@ -15,38 +15,38 @@
 ######################################################################
 
 """
-Product Steps
-
-Steps file for products.feature
-
-For information on Waiting until elements are present in the HTML see:
-    https://selenium-python.readthedocs.io/waits.html
+Steps file for loading background data into the service
 """
+
+import os
 import requests
 from behave import given
+from service.common.status import HTTP_201_CREATED
 
-# HTTP Return Codes
-HTTP_200_OK = 200
-HTTP_201_CREATED = 201
-HTTP_204_NO_CONTENT = 204
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8080")
+REST_ENDPOINT = f"{BASE_URL}/products"
 
-@given('the following products')
+
+@given("the following products")
 def step_impl(context):
-    """ Delete all Products and load new ones """
-    #
-    # List all of the products and delete them one by one
-    #
-    rest_endpoint = f"{context.base_url}/products"
-    context.resp = requests.get(rest_endpoint)
-    assert(context.resp.status_code == HTTP_200_OK)
-    for product in context.resp.json():
-        context.resp = requests.delete(f"{rest_endpoint}/{product['id']}")
-        assert(context.resp.status_code == HTTP_204_NO_CONTENT)
+    """Delete all products and load products from the feature background table."""
 
-    #
-    # load the database with new products
-    #
+    # Delete all existing products
+    response = requests.get(REST_ENDPOINT)
+    response.raise_for_status()
+
+    for product in response.json():
+        requests.delete(f"{REST_ENDPOINT}/{product['id']}").raise_for_status()
+
+    # Load products from background table
     for row in context.table:
-        #
-        # ADD YOUR CODE HERE TO CREATE PRODUCTS VIA THE REST API
-        #
+        payload = {
+            "name": row["name"],
+            "description": row["description"],
+            "price": row["price"],
+            "available": row["available"].strip().lower() == "true",
+            "category": row["category"],
+        }
+
+        response = requests.post(REST_ENDPOINT, json=payload)
+        assert response.status_code == HTTP_201_CREATED
